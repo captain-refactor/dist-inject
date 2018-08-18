@@ -2,20 +2,16 @@
 #
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
+
+defaults: &defaults
+  working_directory: ~/repo
+  docker:
+  - image: circleci/node:10
+
 version: 2
 jobs:
   build:
-    docker:
-    # specify the version you desire here
-    - image: circleci/node:10
-
-    # Specify service dependencies here if necessary
-    # CircleCI maintains a library of pre-built images
-    # documented at https://circleci.com/docs/2.0/circleci-images/
-    # - image: circleci/mongo:3.4.4
-
-    working_directory: ~/repo
-
+    <<: *defaults
     steps:
     - checkout
 
@@ -35,3 +31,19 @@ jobs:
 
     # run tests!
     - run: npm run test
+  deploy:
+    <<: *defaults
+    filters:
+      tags:
+        only: /.*/
+      branches:
+        ignore: /.*/
+    steps:
+    - attach_workspace:
+        at: ~/repo
+    - run:
+        name: Update version
+        command: npm version $CIRCLE_TAG --allow-same-version
+    - run:
+        name: Publish package
+        command: npm publish
