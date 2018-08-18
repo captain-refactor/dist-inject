@@ -33,11 +33,10 @@ jobs:
     - run: npm run test
   deploy:
     <<: *defaults
-    filters:
-      tags:
-        only: /.*/
-      branches:
-        ignore: /.*/
+    tags:
+      only: /.*/
+    branches:
+      ignore: /.*/
     steps:
     - attach_workspace:
         at: ~/repo
