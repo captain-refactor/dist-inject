@@ -1,14 +1,16 @@
-import {InjectableId} from "./provider";
 import {Container} from "./container";
 import * as assert from 'assert';
+import {injectable} from "./decorators/injectable";
 
+import 'reflect-metadata';
+
+@injectable()
 class Database {
 
 }
 
+@injectable()
 class UserService {
-    static injectableDependencies: InjectableId[] = [Database];
-
     constructor(public db: Database) {
     }
 }
@@ -16,7 +18,8 @@ class UserService {
 describe('Container', () => {
     let container = Container.create([UserService, Database]);
 
-    it('should create class with all dependencies', async function () {
+
+    it('should create User service', async function () {
         let us = await container.getMe(UserService);
         assert.ok(us.db);
     });

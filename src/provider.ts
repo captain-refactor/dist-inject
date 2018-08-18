@@ -1,28 +1,19 @@
-export type Constructor<T = any> = {
-    new(...args): T;
-}
+import {Constructor} from "./interfaces";
 
-export type InjectableId<T = any> = string | Constructor<T>;
+export type InjectableId<T = any> = string | Constructor<T> | Symbol;
 
 export type Provider<P = any, T = any> = ValueProvider<P, T> | ClassProvider<P, T>;
 
 export class ValueProvider<P = any, T = any> {
-    provide: InjectableId<P>;
-    value: T;
-
-    constructor(provide: InjectableId<P>, value: T) {
-        this.provide = provide;
-        this.value = value;
+    constructor(public provide: InjectableId<P>,
+                public value: T) {
     }
 }
 
 export class ClassProvider<P = any, T = any> {
-    provide: InjectableId<P>;
-    useClass: Constructor<T>;
-
-    constructor(provide: InjectableId<P>, useClass: Constructor<T>) {
-        this.provide = provide;
-        this.useClass = useClass;
+    constructor(public provide: InjectableId<P>,
+                public useClass: Constructor<T>,
+                public singleton: boolean = true) {
     }
 }
 

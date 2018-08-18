@@ -1,4 +1,5 @@
-import {ClassProvider, Constructor, InjectableId, Provider, ValueProvider} from "./provider";
+import {ClassProvider, InjectableId, Provider, ValueProvider} from "./provider";
+import {Constructor} from "./interfaces";
 
 export interface ValueProviderOptions<P = any, T = any> {
     provide: InjectableId<P>;
@@ -8,6 +9,7 @@ export interface ValueProviderOptions<P = any, T = any> {
 export interface ClassProviderOptions<P = any, T = any> {
     provide: InjectableId<P>;
     useClass: Constructor<T>;
+    singleton?: boolean;
 }
 
 export type ProviderOptions = Constructor | ClassProviderOptions | ValueProviderOptions;
@@ -15,7 +17,7 @@ export type ProviderOptions = Constructor | ClassProviderOptions | ValueProvider
 export class ProviderFactory {
 
 
-    createProvider(input:ProviderOptions): Provider {
+    createProvider(input: ProviderOptions): Provider {
         if (this.isConstructor(input)) {
             return new ClassProvider(input, input);
         }
