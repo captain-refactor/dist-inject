@@ -4,8 +4,7 @@
     "target": "esnext",
     "sourceMap": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "outDir": "build"
+    "emitDecoratorMetadata": true
   },
   "exclude": [
     "node_modules"
