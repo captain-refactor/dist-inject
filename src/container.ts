@@ -1,15 +1,19 @@
-import {
-    ClassProvider, InjectableId,
-    Provider,
-    ValueProvider
-} from "./provider";
+import {ClassProvider, InjectableId, Provider, ValueProvider} from "./provider";
 import {ProviderFactory, ProviderOptions} from "./provider-factory";
-import {Constructor, IInjectable} from "./interfaces";
-import {DEPENDENCIES} from "./symbols";
+import {Constructor, IInjectable, IModule} from "./interfaces";
+import {DEPENDENCIES, PROVIDERS} from "./symbols";
+
+
+export class ProviderNotFound extends Error {
+    constructor(public injectableId: InjectableId) {
+        super(`Provider for: ${injectableId} not found`);
+    }
+
+}
 
 export class Container {
     constructor(private providers: Provider[], private factory: ProviderFactory, private parent?: Container) {
-
+        this.providers.push(new ValueProvider(Container, this));
     }
 
     static create(providersOptions: ProviderOptions[], parent?: Container): Container {
@@ -30,13 +34,7 @@ export class Container {
             return provider.value;
         }
         if (provider instanceof ClassProvider) {
-            let dependencies = this.getDependencies(provider.useClass);
-            let params = [];
-            for (let parameter of dependencies) {
-                let param = await this.getMe(parameter);
-                params.push(param);
-            }
-            let value = new provider.useClass(...params);
+            let value = this.constructInstance(provider.useClass);
             if (provider.singleton) {
                 let index = this.providers.indexOf(provider);
                 this.providers[index] = this.factory.createProvider({provide: id, value});
@@ -46,6 +44,20 @@ export class Container {
         if (this.parent) {
             return await this.parent.getMe(id);
         }
+        return undefined;
+    }
+
+    async constructInstance<T>(constructor: Constructor<T> & Partial<IModule & InjectableId>): Promise<T> {
+        let container: Container = this;
+        let providers = constructor[PROVIDERS];
+        if (providers) container = Container.create(providers, this);
+        let dependencies = this.getDependencies(constructor);
+        let params = [];
+        for (let parameter of dependencies) {
+            let param = await container.getMe(parameter);
+            params.push(param);
+        }
+        return new (constructor as Constructor)(...params);
     }
 
     private getDependencies(constructor: Constructor & Partial<IInjectable>): InjectableId[] {
