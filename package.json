@@ -5,7 +5,7 @@
   "main": "src",
   "types": "src",
   "scripts": {
-    "test": "mocha --require ts-node/register ./**/*.spec.ts",
+    "test": "mocha --require ts-node/register ./src/**/*.spec.ts",
     "build": "tsc"
   },
   "keywords": [],
@@ -21,6 +21,9 @@
   },
   "devDependencies": {
     "@types/mocha": "^5.2.5",
-    "mocha": "^5.2.0"
+    "mocha": "^5.2.0",
+    "reflect-metadata": "^0.1.12",
+    "ts-node": "^7.0.1",
+    "typescript": "^3.0.3"
   }
 }
