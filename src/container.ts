@@ -1,4 +1,12 @@
-import {ClassProvider, InjectableId, Provider, ValueProvider} from "./provider";
+import {
+    ClassProvider,
+    ConfigurableDependency,
+    Dependency,
+    InjectableId,
+    isConfigurableDependency,
+    Provider,
+    ValueProvider
+} from "./provider";
 import {ProviderFactory, ProviderOptions} from "./provider-factory";
 import {Constructor, IInjectable, IModule} from "./interfaces";
 import {DEPENDENCIES, PROVIDERS} from "./symbols";
@@ -30,11 +38,12 @@ export class Container {
 
     async getMe<T>(id: InjectableId<T>): Promise<T> {
         let provider = await this.getProvider(id);
+        if (!provider) return null;
         if (provider instanceof ValueProvider) {
             return provider.value;
         }
         if (provider instanceof ClassProvider) {
-            let value = this.constructInstance(provider.useClass);
+            let value: T = await this.constructInstance(provider.useClass);
             if (provider.singleton) {
                 let index = this.providers.indexOf(provider);
                 this.providers[index] = this.factory.createProvider({provide: id, value});
@@ -53,14 +62,29 @@ export class Container {
         if (providers) container = Container.create(providers, this);
         let dependencies = this.getDependencies(constructor);
         let params = [];
-        for (let parameter of dependencies) {
-            let param = await container.getMe(parameter);
+        for (let dependency of dependencies) {
+            let injectId: InjectableId;
+            let optional: boolean = false;
+            if (isConfigurableDependency(dependency)) {
+                injectId = dependency.injectId;
+                optional = dependency.optional;
+            } else {
+                injectId = dependency;
+            }
+            let param = await container.getMe(injectId);
+            if (!param) {
+                if (optional) {
+                    param = undefined;
+                } else {
+                    throw new ProviderNotFound(injectId);
+                }
+            }
             params.push(param);
         }
         return new (constructor as Constructor)(...params);
     }
 
-    private getDependencies(constructor: Constructor & Partial<IInjectable>): InjectableId[] {
+    private getDependencies(constructor: Constructor & Partial<IInjectable>): Dependency[] {
         return constructor[DEPENDENCIES] || [];
     }
 }
