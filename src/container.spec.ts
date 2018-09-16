@@ -1,9 +1,10 @@
-import {Container} from "./container";
+import {Container, ProviderNotFound} from "./container";
 import * as assert from 'assert';
 import {injectable} from "./decorators/injectable";
 
 import 'reflect-metadata';
 import {provide} from "./decorators/provide";
+import {inject} from "./decorators";
 
 @injectable()
 class Database {
@@ -26,9 +27,14 @@ class UserService {
     }
 }
 
-describe('Container', () => {
-    let container = Container.create([UserService, Database]);
+@injectable()
+class WithNonExistentDependency {
+    constructor(@inject('non-existent') public nonExistent) {
+    }
+}
 
+describe('Container', () => {
+    let container = Container.create([UserService, Database, WithNonExistentDependency]);
 
 
     it('should create User service', async function () {
@@ -36,8 +42,19 @@ describe('Container', () => {
         assert.ok(us.db);
         assert.ok(us.db.x == 'b');
         assert.ok(us.db instanceof OtherDatabase);
-        let otherDb:OtherDatabase = us.db as any;
+        let otherDb: OtherDatabase = us.db as any;
         assert.ok(otherDb.db instanceof Database);
         assert.ok(otherDb.db === otherDb.db2);
+    });
+
+    it('should fail to provide missing dependency', async function () {
+        try {
+            let us = await container.getMe(WithNonExistentDependency);
+            assert.fail('it should fail')
+        } catch (e) {
+            if (e instanceof ProviderNotFound == false) {
+                throw e;
+            }
+        }
     });
 });
