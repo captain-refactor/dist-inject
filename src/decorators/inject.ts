@@ -6,7 +6,7 @@ export function inject(injectableId: InjectableId) {
         if (!constructor[INJECT]) {
             constructor[INJECT] = new Map();
         }
-        constructor[INJECT].add(index, injectableId);
+        constructor[INJECT].set(index, injectableId);
     }
 }
 

@@ -6,7 +6,7 @@ import {ProviderFactory, ProviderOptions} from "./providers/provider-factory";
 
 export class ProviderNotFound extends Error {
     constructor(public injectableId: InjectableId) {
-        super(`Provider for: ${injectableId} not found`);
+        super(`Provider for: ${(injectableId as any).name || injectableId} not found`);
     }
 }
 
