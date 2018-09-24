@@ -1,7 +1,7 @@
 # Dist-inject
 A powerful and lightweight inversion of control container for JavaScript & Node.js apps with zero dependencies.
 
-### About
+## About
 An IoC container uses a class constructor to identify and inject its dependencies.
 
 ## Motivation
