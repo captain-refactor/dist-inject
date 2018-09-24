@@ -1,10 +1,6 @@
+import {inject, injectable, provide} from "./decorators";
 import {Container, ProviderNotFound} from "./container";
-import * as assert from 'assert';
-import {injectable} from "./decorators/injectable";
-
-import 'reflect-metadata';
-import {provide} from "./decorators/provide";
-import {inject} from "./decorators";
+import * as assert from "assert";
 
 @injectable()
 class Database {

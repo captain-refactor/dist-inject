@@ -1,12 +1,12 @@
-import {InjectableId} from "../provider";
+import {InjectableId} from "../providers/provider";
 import {INJECT} from "../symbols";
 
 export function inject(injectableId: InjectableId) {
     return function (constructor, nothing, index) {
         if (!constructor[INJECT]) {
-            constructor[INJECT] = [];
+            constructor[INJECT] = new Map();
         }
-        constructor[INJECT].push({index, injectableId} as InjectParameter);
+        constructor[INJECT].add(index, injectableId);
     }
 }
 

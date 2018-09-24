@@ -12,7 +12,7 @@ export class ClassProvider<T extends I = I, I = any> implements Provider<T, I>, 
     }
 
     private getDependencies(constructor: Constructor & Partial<IInjectable>): Dependency[] {
-        return constructor[DEPENDENCIES] || [];
+        return constructor[DEPENDENCIES] || constructor['dependencies'] || [];
     }
 
     getMe(container: Container): T {

@@ -1,36 +1,29 @@
 import {Constructor, IInjectable} from "../interfaces";
-import {DEPENDENCIES, INJECT, OPTIONAL} from "../symbols";
+import {DEPENDENCIES, FACTORY, INJECT, OPTIONAL} from "../symbols";
 import 'reflect-metadata';
-import {InjectParameter} from "./inject";
-import {isConfigurableDependency} from "../providers/provider";
+import {InjectableId} from "../providers/provider";
 
 
 export function injectable<T>() {
     return function (constructor: Constructor<T> & Partial<IInjectable>) {
-        constructor[DEPENDENCIES] = Reflect.getMetadata('design:paramtypes', constructor);
-        let injects: InjectParameter[] = constructor[INJECT];
-        if (injects) {
-            for (let inject of injects) {
-                constructor[DEPENDENCIES][inject.index] = inject.injectableId;
-            }
-            // cleaning
-            delete constructor[INJECT];
+        let dependencies: InjectableId[] = Reflect.getMetadata('design:paramtypes', constructor);
+        constructor[DEPENDENCIES] = dependencies;
+
+        let optionalIndexes = constructor[OPTIONAL] || new Set();
+        let factories = constructor[FACTORY] || new Set();
+        let injects = constructor[INJECT] || new Map<number, InjectableId>();
+
+        for (let index in dependencies) {
+            constructor[DEPENDENCIES][index] = {
+                injectId: injects.get(index) || dependencies[index],
+                optional: optionalIndexes.has(index),
+                factory: factories.has(index),
+            };
         }
-        let optionalIndexes = constructor[OPTIONAL];
-        if (optionalIndexes) {
-            for (let index of optionalIndexes) {
-                let dep = constructor[DEPENDENCIES][index];
-                if (isConfigurableDependency(dep)) {
-                    dep.optional = true;
-                } else {
-                    constructor[DEPENDENCIES][index] = {
-                        injectId: dep,
-                        optional: true
-                    };
-                }
-            }
-            // cleaning
-            delete constructor[OPTIONAL];
-        }
+        // cleaning
+        delete constructor[OPTIONAL];
+        delete constructor[FACTORY];
+        delete constructor[INJECT];
+
     }
 }

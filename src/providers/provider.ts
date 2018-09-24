@@ -6,13 +6,14 @@ export type InjectableId<T = any> = string | Constructor<T> | Symbol;
 export interface ConfigurableDependency {
     injectId: InjectableId;
     optional: boolean;
+    factory: boolean;
 }
 
 export type Dependency = InjectableId | ConfigurableDependency;
 
 export function isConfigurableDependency(obj: Dependency): obj is ConfigurableDependency {
     if (typeof obj === 'string') return false;
-    return 'injectId' in obj && 'optional' in obj;
+    return 'injectId' in obj;
 }
 
 export interface Provider<T extends I = I, I = any> {
