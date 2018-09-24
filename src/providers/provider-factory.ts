@@ -1,5 +1,7 @@
-import {ClassProvider, InjectableId, Provider, ValueProvider} from "./provider";
-import {Constructor} from "./interfaces";
+import {InjectableId, Provider} from "./provider";
+import {ClassProvider} from "./class-provider";
+import {ValueProvider} from "./value-provider";
+import {Constructor} from "../interfaces";
 
 export interface ValueProviderOptions<P = any, T = any> {
     provide: InjectableId<P>;
@@ -16,6 +18,8 @@ export type ProviderOptions = Constructor | ClassProviderOptions | ValueProvider
 
 export class ProviderFactory {
 
+    constructor(){
+    }
 
     createProvider(input: ProviderOptions): Provider {
         if (this.isConstructor(input)) {

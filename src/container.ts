@@ -1,90 +1,74 @@
-import {
-    ClassProvider,
-    ConfigurableDependency,
-    Dependency,
-    InjectableId,
-    isConfigurableDependency,
-    Provider,
-    ValueProvider
-} from "./provider";
-import {ProviderFactory, ProviderOptions} from "./provider-factory";
-import {Constructor, IInjectable, IModule} from "./interfaces";
-import {DEPENDENCIES, PROVIDERS} from "./symbols";
+import {InjectableId, isFactory} from "./providers/provider";
+import {ProvidersStorage} from "./providers/providers-storage";
+import {ValueProvider} from "./providers/value-provider";
+import {ProviderFactory, ProviderOptions} from "./providers/provider-factory";
 
 
 export class ProviderNotFound extends Error {
     constructor(public injectableId: InjectableId) {
         super(`Provider for: ${injectableId} not found`);
     }
-
 }
 
 export class Container {
-    constructor(private providers: Provider[], private factory: ProviderFactory, private parent?: Container) {
-        this.providers.push(new ValueProvider(Container, this));
+    constructor(protected options: ProviderOptions[],
+                protected factory: ProviderFactory,
+                protected storage: ProvidersStorage,
+                protected parent?: Container) {
+        options.forEach(item => {
+            this.storage.add(factory.createProvider(item));
+        });
+        this.storage.add(new ValueProvider(Container, this));
     }
 
-    static create(providersOptions: ProviderOptions[], parent?: Container): Container {
+    static create(providersOptions: ProviderOptions[] = [], parent?: Container): Container {
         let factory = new ProviderFactory();
-        let providers = providersOptions.map(value => factory.createProvider(value));
-        return new Container(providers, factory, parent);
+        let storage = new ProvidersStorage();
+        return new Container(providersOptions, factory, storage, parent);
     }
 
-    async getProvider<T>(id: InjectableId<T>): Promise<Provider<T, any>> {
-        for await (let provider of this.providers) {
-            if (provider.provide == id) return provider;
-        }
+    createChild(providersOptions: ProviderOptions[]): Container {
+        return Container.create(providersOptions, this);
     }
 
-    async getMe<T>(id: InjectableId<T>): Promise<T> {
-        let provider = await this.getProvider(id);
-        if (!provider) return null;
-        if (provider instanceof ValueProvider) {
-            return provider.value;
+    getMe<T>(id: InjectableId<T>): T {
+        let provider = this.storage.get(id);
+        let instance: T;
+        if (provider) {
+            instance = provider.getMe(this);
         }
-        if (provider instanceof ClassProvider) {
-            let value: T = await this.constructInstance(provider.useClass);
-            if (provider.singleton) {
-                let index = this.providers.indexOf(provider);
-                this.providers[index] = this.factory.createProvider({provide: id, value});
-            }
-            return value;
+        if (!instance && this.parent) {
+            instance = this.parent.getMe(id);
         }
-        if (this.parent) {
-            return await this.parent.getMe(id);
-        }
-        return undefined;
+        // if (instance) {
+        //     instance[CONTAINER] = this.createChild(instance.constructor[PROVIDERS]);
+        // }
+        return instance;
     }
 
-    async constructInstance<T>(constructor: Constructor<T> & Partial<IModule & InjectableId>): Promise<T> {
-        let container: Container = this;
-        let providers = constructor[PROVIDERS];
-        if (providers) container = Container.create(providers, this);
-        let dependencies = this.getDependencies(constructor);
-        let params = [];
-        for (let dependency of dependencies) {
-            let injectId: InjectableId;
-            let optional: boolean = false;
-            if (isConfigurableDependency(dependency)) {
-                injectId = dependency.injectId;
-                optional = dependency.optional;
-            } else {
-                injectId = dependency;
-            }
-            let param = await container.getMe(injectId);
-            if (!param) {
-                if (optional) {
-                    param = undefined;
-                } else {
-                    throw new ProviderNotFound(injectId);
-                }
-            }
-            params.push(param);
+
+    createInstance<T>(id: InjectableId<T>): T {
+        let provider = this.storage.get(id);
+        let instance: T;
+        if (provider) {
+            if (!isFactory(provider)) throw new Error('This provider is not a factory.');
+            instance = provider.create(this);
         }
-        return new (constructor as Constructor)(...params);
+        if (!instance && this.parent) {
+            instance = this.parent.createInstance(id);
+        }
+        // if (instance) {
+        //     instance[CONTAINER] = this.createChild(instance.constructor[PROVIDERS]);
+        // }
+        return instance;
     }
 
-    private getDependencies(constructor: Constructor & Partial<IInjectable>): Dependency[] {
-        return constructor[DEPENDENCIES] || [];
+    createFactory<T>(id: InjectableId<T>): () => T {
+        return () => this.createInstance(id);
+    }
+
+    provide(options: ProviderOptions) {
+        let provider = this.factory.createProvider(options);
+        this.storage.add(provider);
     }
 }
