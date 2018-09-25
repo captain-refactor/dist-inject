@@ -1,5 +1,6 @@
 import {inject, injectable, provide} from "./decorators";
 import {Container, ProviderNotFound} from "./container";
+import 'reflect-metadata';
 import * as assert from "assert";
 
 @injectable()

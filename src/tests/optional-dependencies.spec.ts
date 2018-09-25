@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import {inject, injectable, optional} from "../decorators";
 import {Container} from "../container";
 import * as assert from "assert";

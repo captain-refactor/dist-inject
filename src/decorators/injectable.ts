@@ -1,7 +1,6 @@
 import {Constructor, IInjectable} from "../interfaces";
 import {DEPENDENCIES, FACTORY, INJECT, OPTIONAL} from "../symbols";
-import 'reflect-metadata';
-import {InjectableId} from "../providers/provider";
+import {InjectableId} from "..";
 
 
 export function injectable<T>() {
