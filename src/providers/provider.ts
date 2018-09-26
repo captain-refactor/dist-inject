@@ -21,6 +21,10 @@ export interface Provider<T extends I = I, I = any> {
     match(id: InjectableId<I>): boolean;
 }
 
+export function isProvider(input: any): input is Provider {
+    return 'match' in input && 'getMe' in input;
+}
+
 export interface IFactory<T = any> {
     create(container: Container): T;
 }

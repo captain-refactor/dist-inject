@@ -12,13 +12,13 @@ export class ProviderNotFound extends Error {
 
 export class Container {
     constructor(protected options: ProviderOptions[],
-                protected factory: ProviderFactory,
-                protected storage: ProvidersStorage,
+                protected providerFactory: ProviderFactory,
+                protected providersStorage: ProvidersStorage,
                 protected parent?: Container) {
         options.forEach(item => {
-            this.storage.add(factory.createProvider(item));
+            this.providersStorage.add(providerFactory.createProvider(item));
         });
-        this.storage.add(new ValueProvider(Container, this));
+        this.providersStorage.add(new ValueProvider(Container, this));
     }
 
     static create(providersOptions: ProviderOptions[] = [], parent?: Container): Container {
@@ -32,23 +32,20 @@ export class Container {
     }
 
     getMe<T>(id: InjectableId<T>): T {
-        let provider = this.storage.get(id);
+        let provider = this.providersStorage.get(id);
         let instance: T;
         if (provider) {
             instance = provider.getMe(this);
         }
-        if (!instance && this.parent) {
+        if (!provider && this.parent) {
             instance = this.parent.getMe(id);
         }
-        // if (instance) {
-        //     instance[CONTAINER] = this.createChild(instance.constructor[PROVIDERS]);
-        // }
         return instance;
     }
 
 
     createInstance<T>(id: InjectableId<T>): T {
-        let provider = this.storage.get(id);
+        let provider = this.providersStorage.get(id);
         let instance: T;
         if (provider) {
             if (!isFactory(provider)) throw new Error('This provider is not a factory.');
@@ -68,7 +65,7 @@ export class Container {
     }
 
     provide(options: ProviderOptions) {
-        let provider = this.factory.createProvider(options);
-        this.storage.add(provider);
+        let provider = this.providerFactory.createProvider(options);
+        this.providersStorage.add(provider);
     }
 }

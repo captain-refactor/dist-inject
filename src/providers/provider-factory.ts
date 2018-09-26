@@ -1,4 +1,4 @@
-import {InjectableId, Provider} from "./provider";
+import {InjectableId, isProvider, Provider} from "./provider";
 import {ClassProvider} from "./class-provider";
 import {ValueProvider} from "./value-provider";
 import {Constructor} from "../interfaces";
@@ -18,10 +18,11 @@ export type ProviderOptions = Constructor | ClassProviderOptions | ValueProvider
 
 export class ProviderFactory {
 
-    constructor(){
+    constructor() {
     }
 
-    createProvider(input: ProviderOptions): Provider {
+    createProvider(input: ProviderOptions | Provider): Provider {
+        if (isProvider(input)) return input;
         if (this.isConstructor(input)) {
             return new ClassProvider(input, input);
         }
@@ -29,7 +30,7 @@ export class ProviderFactory {
             return new ValueProvider(input.provide, input.value);
         }
         if (this.isClassProviderOptions(input)) {
-            return new ClassProvider(input.provide, input.useClass);
+            return new ClassProvider(input.provide, input.useClass, input.singleton);
         }
     }
 
