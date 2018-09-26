@@ -1,13 +1,11 @@
 import {InjectableId, Provider} from "./provider";
 
 export class ProvidersStorage {
-
     constructor(protected providers: Provider[] = []) {
-
     }
 
     add(provider: Provider) {
-        this.providers.push(provider);
+        this.providers.unshift(provider);
     }
 
     get<T = any>(id: InjectableId<T>): Provider<T> {
