@@ -2,19 +2,25 @@ import {InjectableId, isProvider, Provider} from "./provider";
 import {ClassProvider} from "./class-provider";
 import {ValueProvider} from "./value-provider";
 import {Constructor} from "../interfaces";
+import {RedirectProvider} from "./redirect-provider";
 
-export interface ValueProviderOptions<P = any, T = any> {
+export interface ValueProviderOptions<P = any, T extends P = P> {
     provide: InjectableId<P>;
     value: T;
 }
 
-export interface ClassProviderOptions<P = any, T = any> {
+export interface ClassProviderOptions<P = any, T extends P = P> {
     provide: InjectableId<P>;
     useClass: Constructor<T>;
     singleton?: boolean;
 }
 
-export type ProviderOptions = Constructor | ClassProviderOptions | ValueProviderOptions;
+export interface RedirectProviderOptions<P = any, T extends P = any> {
+    provide: InjectableId<P>
+    useProvider: InjectableId<T>
+}
+
+export type ProviderOptions = Constructor | ClassProviderOptions | ValueProviderOptions | RedirectProviderOptions;
 
 export class ProviderFactory {
 
@@ -32,6 +38,9 @@ export class ProviderFactory {
         if (this.isClassProviderOptions(input)) {
             return new ClassProvider(input.provide, input.useClass, input.singleton);
         }
+        if (this.isRedirectProviderOptions(input)) {
+            return new RedirectProvider(input.provide, input.useProvider);
+        }
     }
 
     isConstructor<T = any>(constructor): constructor is Constructor<T> {
@@ -44,5 +53,9 @@ export class ProviderFactory {
 
     isClassProviderOptions(provider): provider is ClassProviderOptions {
         return 'provide' in provider && 'useClass' in provider;
+    }
+
+    isRedirectProviderOptions(options): options is RedirectProviderOptions {
+        return 'provide' in options && 'useProvider' in options;
     }
 }
