@@ -1,4 +1,4 @@
-import {InjectableId} from "../providers/provider";
+import {InjectableId} from "..";
 import {INJECT} from "../symbols";
 
 export function inject(injectableId: InjectableId) {
@@ -8,9 +8,4 @@ export function inject(injectableId: InjectableId) {
         }
         constructor[INJECT].set(index, injectableId);
     }
-}
-
-export interface InjectParameter {
-    index: number;
-    injectableId: InjectableId;
 }
