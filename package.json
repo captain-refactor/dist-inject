@@ -12,7 +12,7 @@
     },
     "husky": {
         "hooks": {
-            "pre-commit": "npm run build:docs && npm run add:docs"
+            "pre-commit": "npm run build:docs && git add ./docs --ignore-errors"
         }
     },
     "keywords": [],
