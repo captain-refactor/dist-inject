@@ -6,8 +6,6 @@
     "types": "src",
     "scripts": {
         "test": "mocha --require ts-node/register ./src/**/*.spec.ts",
-        "build:docs": "typedoc --out ./docs",
-        "add:docs": "git add ./docs",
         "build": "tsc"
     },
     "keywords": [],
