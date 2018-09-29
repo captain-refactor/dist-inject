@@ -6,11 +6,13 @@
   "types": "src",
   "scripts": {
     "test": "mocha --require ts-node/register ./src/**/*.spec.ts",
-    "build": "tsc",
-    "build:docs": "typedoc --out ./docs/dev"
+    "build:docs": "typedoc --out ./docs/dev",
+    "build": "tsc"
   },
-  "husky":{
-    "pre-commit": "npm run build:docs"
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run build:docs"
+    }
   },
   "keywords": [],
   "author": "",
