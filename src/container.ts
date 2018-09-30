@@ -1,7 +1,5 @@
-import {InjectableId, Provider, ProvidersStorage} from "./providers";
-import {ProviderFactory, ProviderOptions} from "./providers";
-import {BaseContainer} from "./base-container";
-import {DependencySolver} from "./dependency-solver";
+import {createProvider, InjectableId, isFactory, Provider, ProvidersStorage} from "./providers";
+import {ProviderOptions} from "./providers";
 
 
 export class ProviderNotFound extends Error {
@@ -11,33 +9,49 @@ export class ProviderNotFound extends Error {
 }
 
 export class Container {
-    constructor(protected base: BaseContainer, protected factory: ProviderFactory) {
+    providersStorage = new ProvidersStorage();
 
+    constructor(public parent?: Container) {
     }
 
     getMe<T>(id: InjectableId<T>): T {
-        return this.base.getMe(id);
+        let provider = this.providersStorage.get(id);
+        let result: T = null;
+        if (provider) {
+            result = provider.getMe(this);
+        } else if (this.parent) {
+            result = this.parent.getMe(id);
+        }
+        return result;
     }
 
     createInstance<T>(id: InjectableId<T>): T {
-        return this.base.createInstance(id);
+        let provider = this.providersStorage.get(id);
+        let instance: T = null;
+        if (provider) {
+            if (!isFactory(provider)) throw new Error('This provider is not a factory.');
+            instance = provider.create(this);
+        } else if (this.parent) {
+            instance = this.createInstance(id);
+        }
+        return instance;
     }
 
-    provide(provider: Provider) {
-        this.base.provide(provider);
+    provide(...providers: ProviderOptions[]) {
+        this.providersStorage.add(providers.map(createProvider));
+    }
+
+    createFactory<T>(id: InjectableId<T>): () => T {
+        return () => this.createInstance(id);
     }
 
     createChild(providersOptions: ProviderOptions[]): Container {
-        let providers = providersOptions.map(options => this.factory.createProvider(options));
-        return new Container(this.base.createChild(providers), this.factory);
+        return Container.create(providersOptions, this);
     }
 
-    static create(providersOptions: ProviderOptions[]) {
-        let storage = new ProvidersStorage();
-        let solver = new DependencySolver(storage, );
-        let factory = new ProviderFactory(solver, storage);
-        providersOptions.forEach(options => storage.add(factory.createProvider(options)));
-        let base = new BaseContainer(storage);
-        return new Container(base, factory)
+    static create(providersOptions: ProviderOptions[], parent?: Container): Container {
+        let container = new Container(parent);
+        container.provide(...providersOptions);
+        return container;
     }
 }

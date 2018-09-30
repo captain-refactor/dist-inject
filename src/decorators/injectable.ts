@@ -1,4 +1,4 @@
-import {Constructor, IInjectable} from "../interfaces";
+import {Constructor, IInjectable, IInjectableProp} from "../interfaces";
 import {DEPENDENCIES, FACTORY, INJECT, OPTIONAL} from "../symbols";
 import {InjectableId} from "..";
 
@@ -7,6 +7,7 @@ type InjectableConstructor<T> = Constructor<T> & Partial<IInjectable>
 export function injectable<T>() {
     return function (constructor: (InjectableConstructor<T>) | Object, propertyName?: string) {
         let func: Partial<IInjectable> = propertyName ? (constructor as any)[propertyName] : constructor;
+        if (func[DEPENDENCIES] || (func as IInjectableProp).dependencies) return;
         let dependencies: InjectableId[] = (Reflect as any).getMetadata('design:paramtypes', func) || [];
         func[DEPENDENCIES] = dependencies;
 
