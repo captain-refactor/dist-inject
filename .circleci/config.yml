@@ -49,6 +49,13 @@ jobs:
     - run:
         name: Publish package
         command: npm publish
+  test:
+    <<: *defaults
+    steps:
+    - attach_workspace:
+        at: ~/repo
+    - run: npm run coverage:test
+    - run: npm run coverage:report
 
 workflows:
   version: 2
@@ -61,6 +68,7 @@ workflows:
     - deploy:
         requires:
         - build
+        - test
         filters:
           tags:
             only: /.*/
