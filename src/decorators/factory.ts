@@ -1,5 +1,4 @@
-import {FACTORY} from "../symbols";
-import {InjectableId} from "../providers/provider";
+import {FACTORY, InjectableId} from "..";
 import {inject} from "./inject";
 
 export function factory(id: InjectableId) {

@@ -1,5 +1,4 @@
 import {Constructor} from "../interfaces";
-import {Container} from "../container";
 
 export type InjectableId<T = any> = string | Constructor<T> | Symbol;
 
@@ -17,7 +16,7 @@ export function isConfigurableDependency(obj: Dependency): obj is ConfigurableDe
 }
 
 export interface Provider<T extends I = I, I = any> {
-    getMe(container: Container): T
+    getMe(): T
     match(id: InjectableId<I>): boolean;
 }
 
@@ -26,7 +25,7 @@ export function isProvider(input: any): input is Provider {
 }
 
 export interface IFactory<T = any> {
-    create(container: Container): T;
+    create(): T;
 }
 
 export function isFactory(obj: any): obj is IFactory {
