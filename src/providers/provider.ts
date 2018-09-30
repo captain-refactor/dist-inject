@@ -5,8 +5,8 @@ export type InjectableId<T = any> = string | Constructor<T> | Symbol;
 
 export interface ConfigurableDependency {
     injectId: InjectableId;
-    optional: boolean;
-    factory: boolean;
+    optional?: boolean;
+    factory?: boolean;
 }
 
 export type Dependency = InjectableId | ConfigurableDependency;
@@ -16,13 +16,13 @@ export function isConfigurableDependency(obj: Dependency): obj is ConfigurableDe
     return 'injectId' in obj;
 }
 
-export interface Provider<T extends I = I, I = any> {
+export interface Provider<T = any> {
     getMe(container: Container): T
-    match(id: InjectableId<I>): boolean;
+    injectId: InjectableId<T>;
 }
 
 export function isProvider(input: any): input is Provider {
-    return 'match' in input && 'getMe' in input;
+    return 'injectId' in input && 'getMe' in input;
 }
 
 export interface IFactory<T = any> {

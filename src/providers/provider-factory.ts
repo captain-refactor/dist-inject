@@ -22,10 +22,11 @@ export interface RedirectProviderOptions<P = any, T extends P = any> {
 
 export type ProviderOptions = Constructor | ClassProviderOptions | ValueProviderOptions | RedirectProviderOptions;
 
+
 export function createProvider(input: ProviderOptions | Provider): Provider {
     if (isProvider(input)) return input;
     if (isConstructor(input)) {
-        return new ClassProvider(input, input);
+        return createClassProvider({useClass: input, provide: input});
     }
     if (isValueProviderOptions(input)) {
         return new ValueProvider(input.provide, input.value);
@@ -36,6 +37,13 @@ export function createProvider(input: ProviderOptions | Provider): Provider {
     if (isRedirectProviderOptions(input)) {
         return new RedirectProvider(input.provide, input.useProvider);
     }
+    throw new Error('something went wrong');
+}
+
+export function createClassProvider(options: ClassProviderOptions): ClassProvider {
+
+
+    return new ClassProvider(options.provide, options.useClass, options.singleton);
 }
 
 export function isConstructor<T = any>(constructor): constructor is Constructor<T> {

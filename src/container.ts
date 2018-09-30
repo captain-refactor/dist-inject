@@ -1,7 +1,5 @@
-import {InjectableId, isFactory} from "./providers/provider";
-import {ProvidersStorage} from "./providers/providers-storage";
-import {ValueProvider} from "./providers/value-provider";
-import {ProviderFactory, ProviderOptions} from "./providers/provider-factory";
+import {createProvider, InjectableId, isFactory, Provider, ProvidersStorage} from "./providers";
+import {ProviderOptions} from "./providers";
 
 
 export class ProviderNotFound extends Error {
@@ -11,61 +9,49 @@ export class ProviderNotFound extends Error {
 }
 
 export class Container {
-    constructor(protected options: ProviderOptions[],
-                protected providerFactory: ProviderFactory,
-                protected providersStorage: ProvidersStorage,
-                protected parent?: Container) {
-        options.forEach(item => {
-            this.providersStorage.add(providerFactory.createProvider(item));
-        });
-        this.providersStorage.add(new ValueProvider(Container, this));
-    }
+    providersStorage = new ProvidersStorage();
 
-    static create(providersOptions: ProviderOptions[] = [], parent?: Container): Container {
-        let factory = new ProviderFactory();
-        let storage = new ProvidersStorage();
-        return new Container(providersOptions, factory, storage, parent);
-    }
-
-    createChild(providersOptions: ProviderOptions[]): Container {
-        return Container.create(providersOptions, this);
+    constructor(public parent?: Container) {
     }
 
     getMe<T>(id: InjectableId<T>): T {
         let provider = this.providersStorage.get(id);
-        let instance: T;
+        let result: T = null;
         if (provider) {
-            instance = provider.getMe(this);
+            result = provider.getMe(this);
+        } else if (this.parent) {
+            result = this.parent.getMe(id);
         }
-        if (!provider && this.parent) {
-            instance = this.parent.getMe(id);
+        return result;
+    }
+
+    createInstance<T>(id: InjectableId<T>): T {
+        let provider = this.providersStorage.get(id);
+        let instance: T = null;
+        if (provider) {
+            if (!isFactory(provider)) throw new Error('This provider is not a factory.');
+            instance = provider.create(this);
+        } else if (this.parent) {
+            instance = this.createInstance(id);
         }
         return instance;
     }
 
-
-    createInstance<T>(id: InjectableId<T>): T {
-        let provider = this.providersStorage.get(id);
-        let instance: T;
-        if (provider) {
-            if (!isFactory(provider)) throw new Error('This provider is not a factory.');
-            instance = provider.create(this);
-        }
-        if (!instance && this.parent) {
-            instance = this.parent.createInstance(id);
-        }
-        // if (instance) {
-        //     instance[CONTAINER] = this.createChild(instance.constructor[PROVIDERS]);
-        // }
-        return instance;
+    provide(...providers: ProviderOptions[]) {
+        this.providersStorage.add(providers.map(createProvider));
     }
 
     createFactory<T>(id: InjectableId<T>): () => T {
         return () => this.createInstance(id);
     }
 
-    provide(options: ProviderOptions) {
-        let provider = this.providerFactory.createProvider(options);
-        this.providersStorage.add(provider);
+    createChild(providersOptions: ProviderOptions[]): Container {
+        return Container.create(providersOptions, this);
+    }
+
+    static create(providersOptions: ProviderOptions[], parent?: Container): Container {
+        let container = new Container(parent);
+        container.provide(...providersOptions);
+        return container;
     }
 }

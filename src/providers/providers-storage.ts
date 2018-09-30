@@ -1,16 +1,20 @@
 import {InjectableId, Provider} from "./provider";
 
 export class ProvidersStorage {
-    constructor(protected providers: Provider[] = []) {
-    }
+    protected providers: Map<any, Provider> = new Map;
 
-    add(provider: Provider) {
-        this.providers.unshift(provider);
+    add(providers: Provider[]) {
+        for (let provider of providers) {
+            this.providers.set(provider.injectId, provider);
+        }
     }
 
     get<T = any>(id: InjectableId<T>): Provider<T> {
-        for (let provider of this.providers) {
-            if (provider.match(id)) return provider as any;
-        }
+        return this.providers.get(id) || null;
+
+    }
+
+    has(id: InjectableId): boolean {
+        return this.providers.has(id);
     }
 }

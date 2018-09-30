@@ -1,21 +1,14 @@
 import {InjectableId, Provider} from "./provider";
 import {Container} from "../container";
 
-export class RedirectProvider<P, T extends P = P> implements Provider<T> {
-    provide: InjectableId<T>;
-    useProvider: InjectableId<T>;
+export class RedirectProvider<T = any> implements Provider<T> {
 
-    constructor(provide: InjectableId<T>, useProvider: InjectableId<T>) {
-        this.provide = provide;
-        this.useProvider = useProvider;
+
+    constructor(public injectId: InjectableId<T>,
+                protected useProvider: InjectableId<T>) {
     }
 
     getMe(container: Container): T {
         return container.getMe(this.useProvider);
     }
-
-    match(id: InjectableId<any>): boolean {
-        return id === this.provide;
-    }
-
 }

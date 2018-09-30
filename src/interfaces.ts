@@ -1,14 +1,19 @@
 import {DEPENDENCIES, PROVIDERS} from "./symbols";
-import {ProviderOptions} from "./providers/provider-factory";
-import {Dependency} from "./providers/provider";
+import {Dependency, ProviderOptions} from "./providers";
 
 export type Constructor<T = any> = {
     new(...args): T;
 }
 
-export interface IInjectable<T = any> extends Constructor<T> {
+export interface IInjectableSymbol {
     [DEPENDENCIES]: Dependency[];
 }
+
+export interface IInjectableProp {
+    dependencies: Dependency[]
+}
+
+export type IInjectable<T = any> = IInjectableSymbol | IInjectableProp;
 
 export interface IModule {
     [PROVIDERS]: ProviderOptions[];

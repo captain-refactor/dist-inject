@@ -1,39 +1,82 @@
-import {Dependency, IFactory, InjectableId, isConfigurableDependency, Provider} from "./provider";
+import {
+    ConfigurableDependency,
+    Dependency,
+    IFactory,
+    InjectableId,
+    isConfigurableDependency,
+    Provider
+} from "./provider";
+import {Constructor, IInjectable, IInjectableProp} from "../interfaces";
 import {Container, ProviderNotFound} from "../container";
-import {Constructor, IInjectable} from "../interfaces";
 import {DEPENDENCIES, PROVIDERS} from "../symbols";
+import {ProviderOptions} from "./provider-factory";
 
-export class ClassProvider<T extends I = I, I = any> implements Provider<T, I>, IFactory<T> {
-    protected cached: T;
+class ProviderCache<T> {
+    private cache = new Map<Container, T>();
 
-    constructor(public provide: InjectableId<I>,
-                public useClass: Constructor<T>,
-                public singleton: boolean = true) {
+    constructor(private dependencies: ConfigurableDependency[]) {
     }
 
-    private getDependencies(constructor: Constructor & Partial<IInjectable>): Dependency[] {
-        return constructor[DEPENDENCIES] || constructor['dependencies'] || [];
+    get(cont: Container) {
+        let instance = this.cache.get(cont);
+        if (instance) {
+            for (let dep of this.dependencies) {
+                if (cont.providersStorage.has(dep.injectId)) return null;
+            }
+            return instance;
+        }
+        if (cont.parent) return this.get(cont.parent);
+        return null;
+    }
+
+    add(cont: Container, instance: T) {
+        this.cache.set(cont, instance);
+    }
+}
+
+export class ClassProvider<T = any> implements Provider<T>, IFactory<T> {
+    protected cache: ProviderCache<T>;
+    providers: ProviderOptions[];
+    private dependencies: ConfigurableDependency[];
+
+    constructor(public injectId: InjectableId<T>,
+                protected useClass: Constructor<T> & Partial<IInjectable>,
+                protected singleton: boolean = true) {
+        this.prepareProviders();
+        this.dependencies = this.getDependencies();
+        this.cache = new ProviderCache<T>(this.dependencies);
+    }
+
+    protected prepareProviders() {
+        this.providers = this.useClass[PROVIDERS];
     }
 
     getMe(container: Container): T {
-        if (this.cached !== undefined && this.singleton) {
-            return this.cached;
+        if (this.singleton) {
+            let cached = this.cache.get(container);
+            if (cached) return cached;
         }
         return this.create(container);
     }
 
-
-    match(id: InjectableId<I>) {
-        return this.provide == id;
+    create(container: Container): T {
+        if (this.providers) {
+            container = container.createChild(this.providers);
+        }
+        let params = this.solveDependencies(container);
+        let instance = new (this.useClass as Constructor<T>)(...params);
+        this.cache.add(container, instance);
+        return instance;
     }
 
-    create(container: Container): T {
-        if (this.useClass[PROVIDERS]) {
-            container = container.createChild(this.useClass[PROVIDERS]);
-        }
-        let dependencies = this.getDependencies(this.useClass);
-        let params = [];
-        for (let dependency of dependencies) {
+    protected getDependencies(): ConfigurableDependency[] {
+        let deps: Dependency[] = this.useClass[DEPENDENCIES] || (this.useClass as IInjectableProp).dependencies || [];
+        return deps.map(dependency => isConfigurableDependency(dependency) ? dependency : {injectId: dependency})
+    }
+
+    protected solveDependencies<T>(container: Container) {
+        let parameters = [];
+        for (let dependency of this.dependencies) {
             let injectId: InjectableId;
             let optional: boolean = false;
             if (isConfigurableDependency(dependency)) {
@@ -42,18 +85,16 @@ export class ClassProvider<T extends I = I, I = any> implements Provider<T, I>, 
             } else {
                 injectId = dependency;
             }
-            let param = container.getMe(injectId);
-            if (!param) {
+            let parameter = container.getMe(injectId);
+            if (!parameter) {
                 if (optional) {
-                    param = undefined;
+                    parameter = undefined;
                 } else {
                     throw new ProviderNotFound(injectId);
                 }
             }
-            params.push(param);
+            parameters.push(parameter);
         }
-        let instance = new this.useClass(...params);
-        this.cached = instance;
-        return instance;
+        return parameters;
     }
 }

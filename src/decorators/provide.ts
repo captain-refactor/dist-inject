@@ -1,10 +1,11 @@
-import {Constructor} from "../interfaces";
+import {Constructor, IModule} from "../interfaces";
 import {PROVIDERS} from "../symbols";
-import {ProviderFactory, ProviderOptions} from "../providers/provider-factory";
+import {ProviderOptions} from "../providers";
+import {injectable} from "./injectable";
 
 export function provide(...toProvide: ProviderOptions[]) {
-    let factory = new ProviderFactory();
-    return function (constructor: Constructor) {
-        constructor[PROVIDERS] = toProvide.map(options => factory.createProvider(options));
+    return function (constructor: Constructor & Partial<IModule>) {
+        injectable()(constructor);
+        constructor[PROVIDERS] = toProvide;
     }
 }
