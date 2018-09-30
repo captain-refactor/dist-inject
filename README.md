@@ -1,4 +1,7 @@
 # Dist-inject
+[![codecov](https://codecov.io/gh/janexpando/dist-inject/branch/master/graph/badge.svg)](https://codecov.io/gh/janexpando/dist-inject)
+[![CircleCI](https://circleci.com/gh/janexpando/dist-inject/tree/master.svg?style=svg)](https://circleci.com/gh/janexpando/dist-inject/tree/master)
+
 A powerful and lightweight inversion of control container for JavaScript & Node.js apps with zero dependencies.
 
 ## About
