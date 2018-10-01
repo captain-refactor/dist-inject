@@ -1,4 +1,4 @@
-import {createProvider, InjectableId, isFactory, Provider, ProvidersStorage} from "./providers";
+import {createProvider, InjectableId, isFactory, ProvidersStorage} from "./providers";
 import {ProviderOptions} from "./providers";
 
 
@@ -49,7 +49,7 @@ export class Container {
         return Container.create(providersOptions, this);
     }
 
-    static create(providersOptions: ProviderOptions[], parent?: Container): Container {
+    static create(providersOptions: ProviderOptions[] = [], parent?: Container): Container {
         let container = new Container(parent);
         container.provide(...providersOptions);
         return container;

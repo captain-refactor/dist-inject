@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import {inject, injectable, provide} from "./decorators";
 import {Container, ProviderNotFound} from "./container";
 import * as assert from "assert";
+import {fail, ok} from "assert";
 
 @injectable()
 class Database {
@@ -33,21 +34,25 @@ class WithNonExistentDependency {
 describe('Container', () => {
     let container = Container.create([UserService, Database, WithNonExistentDependency]);
 
+    it('should be created using create method', () => {
+        let container = Container.create();
+        ok(container);
+    });
 
     it('should create User service', async function () {
         let us = await container.getMe(UserService);
-        assert.ok(us.db);
-        assert.ok(us.db.x == 'b');
-        assert.ok(us.db instanceof OtherDatabase);
+        ok(us.db);
+        ok(us.db.x == 'b');
+        ok(us.db instanceof OtherDatabase);
         let otherDb: OtherDatabase = us.db as any;
-        assert.ok(otherDb.db instanceof Database);
-        assert.ok(otherDb.db === otherDb.db2);
+        ok(otherDb.db instanceof Database);
+        ok(otherDb.db === otherDb.db2);
     });
 
     it('should fail to provide missing dependency', async function () {
         try {
-            let us = await container.getMe(WithNonExistentDependency);
-            assert.fail('it should fail')
+            await container.getMe(WithNonExistentDependency);
+            fail('it should fail')
         } catch (e) {
             if (e instanceof ProviderNotFound == false) {
                 throw e;
