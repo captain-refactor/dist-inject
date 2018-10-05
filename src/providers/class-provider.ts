@@ -10,6 +10,7 @@ import {Constructor, IInjectable, IInjectableProp} from "../interfaces";
 import {Container, ProviderNotFound} from "../container";
 import {DEPENDENCIES, PROVIDERS} from "../symbols";
 import {ProviderOptions} from "./provider-factory";
+import {DistInjectError} from "../error";
 
 class ProviderCache<T> {
     private cache = new Map<Container, T>();
@@ -34,10 +35,30 @@ class ProviderCache<T> {
     }
 }
 
+export class CircularDependencyFound extends DistInjectError {
+    circle: string[] = [];
+
+    get message() {
+        return this.circle.join(' -> ');
+    }
+
+    constructor(onClass: Constructor) {
+        super();
+        this.circle.push(onClass.name);
+    }
+
+    addToCircle(constructor: Constructor): CircularDependencyFound {
+        this.circle.push(constructor.name);
+        return this;
+    }
+
+}
+
 export class ClassProvider<T = any> implements Provider<T>, IFactory<T> {
     protected cache: ProviderCache<T>;
     providers: ProviderOptions[];
     private dependencies: ConfigurableDependency[];
+    private isResolvingDependencies: boolean = false;
 
     constructor(public injectId: InjectableId<T>,
                 protected useClass: Constructor<T> & Partial<IInjectable>,
@@ -60,13 +81,26 @@ export class ClassProvider<T = any> implements Provider<T>, IFactory<T> {
     }
 
     create(container: Container): T {
+        if (this.isResolvingDependencies) {
+            throw new CircularDependencyFound(this.useClass);
+        }
         if (this.providers) {
             container = container.createChild(this.providers);
         }
-        let params = this.solveDependencies(container);
-        let instance = new (this.useClass as Constructor<T>)(...params);
-        this.cache.add(container, instance);
-        return instance;
+        try {
+            this.isResolvingDependencies = true;
+            let params = this.solveDependencies(container);
+            this.isResolvingDependencies = false;
+            let instance = new (this.useClass as Constructor<T>)(...params);
+            this.cache.add(container, instance);
+            return instance;
+        } catch (e) {
+            if (e instanceof CircularDependencyFound) {
+                throw e.addToCircle(this.useClass);
+            } else {
+                throw e;
+            }
+        }
     }
 
     protected getDependencies(): ConfigurableDependency[] {
